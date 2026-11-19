@@ -178,3 +178,89 @@ WHERE g2.categoria = g.categoria
 
 -- CONSULTA 11
 -- 
+SELECT		t.nome AS treinador,
+			COUNT(*) FILTER (WHERE pb.resultado = 'VITORIA') AS vitorias,
+			COUNT(*) AS total,
+			ROUND (100.0 * COUNT(*) FILTER (WHERE pb.resultado = 'VITORIA') / COUNT(*), 2) AS percentual
+
+FROM treinador t
+JOIN inscricao i ON i.id_treinador = t.id_treinador
+JOIN participacao_batalha pb ON pb.id_inscricao = i.id_inscricao 
+JOIN batalha b ON b.id_batalha = pb.id_batalha
+WHERE b.situacao = 'CONCLUIDA'
+GROUP BY t.id_treinador, t.nome
+HAVING COUNT(*) >= 10
+AND	   100.0 * COUNT(*) FILTER (WHERE pb.resultado = 'VITORIA') / COUNT(*) > 70;
+
+
+
+-- CONSULTA 12
+--
+SELECT	e.nome AS especie
+
+FROM 	especie e
+WHERE 	EXISTS	(SELECT *
+				 FROM pokemon p2
+				 WHERE p2.id_especie = e.id_especie) 
+  AND	NOT EXISTS (SELECT *
+  					FROM uso_pokemon u
+					JOIN pokemon p ON p.id_pokemon = u.id_pokemon
+					WHERE e.id_especie = p.id_especie)
+
+
+ 
+
+-- CONSULTA 13
+--
+SELECT	p.id_pokemon AS identificador,
+		p.apelido,
+		e.nome AS especie,
+		p.nivel,
+		ROUND((SELECT AVG(p3.nivel) FROM pokemon p3) , 2) AS media_global
+
+FROM pokemon p 
+JOIN especie e ON e.id_especie = p.id_especie
+WHERE p.nivel > (SELECT AVG(p2.nivel)
+				 FROM pokemon p2)  --pega todos os pokemons
+
+ORDER BY p.nivel DESC;
+ 
+
+
+-- CONSULTA 14
+--
+SELECT DISTINCT t.nome AS treinador,
+				t.id_treinador AS identificador
+				
+FROM treinador t
+WHERE t.id_treinador IN (SELECT c.id_treinador
+			 		  FROM captura c
+			          JOIN regiao r ON c.id_regiao = r.id_regiao
+			          WHERE r.nome = 'Kanto')
+
+
+
+
+--CONSULTA 15
+
+SELECT t.id_treinador, t.nome
+FROM   treinador t
+WHERE  NOT EXISTS (
+
+        SELECT 1
+        FROM   tipo tp
+        WHERE  tp.id_tipo IN (SELECT et.id_tipo         
+                                FROM especie e                      
+                                JOIN regiao r ON r.id_regiao = e.id_regiao
+                                JOIN especie_tipo et ON et.id_especie = e.id_especie
+                               WHERE r.nome = 'Kanto')
+          AND  NOT EXISTS (
+
+                SELECT 1
+                FROM   pokemon p
+                JOIN   especie_tipo et2 ON et2.id_especie = p.id_especie   -- descobre o tipo de cada Pokémon
+                WHERE  p.id_treinador = t.id_treinador     
+                  AND  et2.id_tipo    = tp.id_tipo          
+
+          )
+);
