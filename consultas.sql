@@ -147,3 +147,34 @@ WHERE g.poder > (SELECT MAX(g2.poder)
 
 -- CONSULTA 9
 -- 
+SELECT	e.nome
+		s.nome AS especie_origem,
+		sf.nome AS especie_destino,
+		e.nivel_minimo, 
+		e.item_necessario
+		
+FROM evolucao e
+JOIN especie s ON s.id_especie = e.id_origem
+JOIN especie sf ON sf.id_especie = e.id_destino
+
+ORDER BY especie_origem ASC;
+
+
+
+-- CONSULTA 1O
+--
+SELECT	g.nome,
+		g.categoria,
+		g.poder 
+		
+FROM golpe g
+WHERE g.poder > ALL (SELECT g2.poder 
+FROM golpe g2                  
+WHERE g2.categoria = g.categoria
+                    		AND g2.id_golpe <> g.id_golpe)
+
+
+
+
+-- CONSULTA 11
+-- 
