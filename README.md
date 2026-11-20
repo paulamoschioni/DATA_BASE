@@ -20,6 +20,8 @@ sql/
 ├── 01_criacao_liga_pokemon.sql   # esquema: 19 tabelas, chaves e restrições
 ├── 02_carga_liga_pokemon.sql     # carga de dados fictícios e reproduzíveis
 └── 03_consultas.sql              # as 20 consultas
+docs/
+└── der-liga-pokemon.png          # diagrama entidade-relacionamento (DER lógico)
 ```
 
 ## O modelo de dados
@@ -34,35 +36,7 @@ O schema `liga_pokemon` tem 19 tabelas organizadas em 5 blocos:
 | Equipes | `equipe`, `equipe_pokemon` |
 | Torneios e batalhas | `torneio`, `inscricao`, `batalha`, `participacao_batalha`, `uso_pokemon`, `evento_batalha` |
 
-```mermaid
-erDiagram
-    REGIAO ||--o{ ESPECIE : "origem"
-    REGIAO ||--o{ TREINADOR : "mora em"
-    REGIAO ||--o{ CAPTURA : "ocorre em"
-    REGIAO ||--o{ TORNEIO : "sedia"
-    ESPECIE ||--o{ ESPECIE_TIPO : ""
-    TIPO ||--o{ ESPECIE_TIPO : ""
-    ESPECIE ||--o{ EVOLUCAO : "origem/destino"
-    ESPECIE ||--o{ POKEMON : "é da espécie"
-    TREINADOR |o--o{ POKEMON : "possui"
-    POKEMON ||--o| CAPTURA : "capturado em"
-    TREINADOR ||--o{ CAPTURA : "realiza"
-    TIPO ||--o{ GOLPE : ""
-    POKEMON ||--o{ POKEMON_GOLPE : "conhece"
-    GOLPE ||--o{ POKEMON_GOLPE : ""
-    TREINADOR ||--o{ EQUIPE : "monta"
-    EQUIPE ||--o{ EQUIPE_POKEMON : ""
-    POKEMON ||--o{ EQUIPE_POKEMON : ""
-    TORNEIO ||--o{ INSCRICAO : ""
-    TREINADOR ||--o{ INSCRICAO : "se inscreve"
-    TORNEIO ||--o{ BATALHA : ""
-    BATALHA ||--o{ PARTICIPACAO_BATALHA : ""
-    INSCRICAO ||--o{ PARTICIPACAO_BATALHA : ""
-    PARTICIPACAO_BATALHA ||--o{ USO_POKEMON : ""
-    POKEMON ||--o{ USO_POKEMON : ""
-    USO_POKEMON ||--o{ EVENTO_BATALHA : ""
-    GOLPE ||--o{ EVENTO_BATALHA : ""
-```
+![DER lógico da Liga Pokémon](docs/der-liga-pokemon.png)
 
 **Volume da carga:** 8 regiões · 250 espécies · 18 tipos · 120 treinadores · 1.500 Pokémons · 120 golpes · 200 equipes · 35 torneios · 700 inscrições · 1.000 batalhas · 2.000 participações · 6.000 usos de Pokémon · 30.000 eventos de batalha.
 
