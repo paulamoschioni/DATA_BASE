@@ -264,3 +264,47 @@ WHERE  NOT EXISTS (
 
           )
 );
+
+
+
+-- CONSULTA 16
+-- PERGUNTA 1: com 1 evolução, o Charmander vira o quê?
+SELECT o.nome AS especie_origem,
+       d.nome AS especie_final,
+       1      AS etapas                                 
+FROM   evolucao ev
+JOIN   especie o ON o.id_especie = ev.id_origem         
+JOIN   especie d ON d.id_especie = ev.id_destino        
+WHERE  o.nome = 'Charmander'
+
+UNION                                                   
+
+-- PERGUNTA 2: com 2 evoluções, o Charmander vira o quê?
+SELECT o.nome AS especie_origem,
+       d.nome AS especie_final,
+       2      AS etapas                                 
+FROM   evolucao ev1                                    
+JOIN   evolucao ev2 ON ev2.id_origem = ev1.id_destino  
+JOIN   especie o    ON o.id_especie  = ev1.id_origem   
+JOIN   especie d    ON d.id_especie  = ev2.id_destino  
+WHERE  o.nome = 'Charmander'
+
+ORDER BY etapas;   
+
+
+
+-- CONSULTA 17
+SELECT	t.nome AS treinador,
+		p1.apelido,
+		e.nome AS especie	
+		p1.nivel AS nivel_pokemon
+		
+FROM treinador t
+JOIN pokemon p1 ON p1.id_treinador = t.id_treinador
+JOIN especie e ON e.id_especie = p1.id_especie
+WHERE p1.nivel = (SELECT MAX(p.nivel) FROM pokemon p)
+              
+
+
+-- CONSULTA 18
+
