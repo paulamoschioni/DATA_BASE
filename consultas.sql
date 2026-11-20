@@ -132,7 +132,7 @@ WHERE   p.nivel > (SELECT AVG(p2.nivel)                  -- pega a média da esp
 
 
 -- CONSULTA 8
--- Listar nome, categoria e poder do poder que tem poder maior que todos de sua categoria
+-- Listar nome, categoria e poder do golpe que tem poder maior que todos de sua categoria
 SELECT	g.nome,
 		g.categoria,
 		g.poder 
@@ -141,14 +141,14 @@ FROM golpe g
 WHERE g.poder > (SELECT MAX(g2.poder)
                    FROM golpe g2
                   WHERE g2.categoria = g.categoria
-                    AND g2.id_golpe <> g.id_golpe)
+                    AND g2.id_golpe <> g.id_golpe);
 
 
 
 -- CONSULTA 9
--- 
-SELECT	e.nome
-		s.nome AS especie_origem,
+-- Listar as evoluções: espécie de origem, espécie de destino,
+-- nível mínimo e item necessário, ordenado pela espécie de origem
+SELECT	s.nome AS especie_origem,
 		sf.nome AS especie_destino,
 		e.nivel_minimo, 
 		e.item_necessario
@@ -162,7 +162,8 @@ ORDER BY especie_origem ASC;
 
 
 -- CONSULTA 1O
---
+-- Mesma ideia da consulta 8 (golpe mais forte de cada categoria),
+-- mas usando > ALL em vez de MAX
 SELECT	g.nome,
 		g.categoria,
 		g.poder 
@@ -171,13 +172,14 @@ FROM golpe g
 WHERE g.poder > ALL (SELECT g2.poder 
 FROM golpe g2                  
 WHERE g2.categoria = g.categoria
-                    		AND g2.id_golpe <> g.id_golpe)
+                    		AND g2.id_golpe <> g.id_golpe);
 
 
 
 
 -- CONSULTA 11
--- 
+-- Listar os treinadores com pelo menos 10 participações em batalhas
+-- concluídas e mais de 70% de vitórias, mostrando vitórias, total e percentual
 SELECT		t.nome AS treinador,
 			COUNT(*) FILTER (WHERE pb.resultado = 'VITORIA') AS vitorias,
 			COUNT(*) AS total,
@@ -195,7 +197,8 @@ AND	   100.0 * COUNT(*) FILTER (WHERE pb.resultado = 'VITORIA') / COUNT(*) > 70;
 
 
 -- CONSULTA 12
---
+-- Listar as espécies que têm Pokémon cadastrado, mas nenhum
+-- deles foi usado em batalha (sem registro em uso_pokemon)
 SELECT	e.nome AS especie
 
 FROM 	especie e
@@ -205,13 +208,14 @@ WHERE 	EXISTS	(SELECT *
   AND	NOT EXISTS (SELECT *
   					FROM uso_pokemon u
 					JOIN pokemon p ON p.id_pokemon = u.id_pokemon
-					WHERE e.id_especie = p.id_especie)
+					WHERE e.id_especie = p.id_especie);
 
 
  
 
 -- CONSULTA 13
---
+-- Listar os Pokémons com nível acima da média global (de todos
+-- os Pokémons), mostrando essa média. Ordem decrescente por nível
 SELECT	p.id_pokemon AS identificador,
 		p.apelido,
 		e.nome AS especie,
@@ -228,7 +232,8 @@ ORDER BY p.nivel DESC;
 
 
 -- CONSULTA 14
---
+-- Listar os treinadores que já fizeram pelo menos uma
+-- captura na região de Kanto
 SELECT DISTINCT t.nome AS treinador,
 				t.id_treinador AS identificador
 				
@@ -236,13 +241,15 @@ FROM treinador t
 WHERE t.id_treinador IN (SELECT c.id_treinador
 			 		  FROM captura c
 			          JOIN regiao r ON c.id_regiao = r.id_regiao
-			          WHERE r.nome = 'Kanto')
+			          WHERE r.nome = 'Kanto');
 
 
 
 
 --CONSULTA 15
-
+-- Divisão relacional: listar os treinadores que possuem Pokémons
+-- de TODOS os tipos que aparecem nas espécies de Kanto
+-- (não existe tipo de Kanto que o treinador não tenha)
 SELECT t.id_treinador, t.nome
 FROM   treinador t
 WHERE  NOT EXISTS (
@@ -268,6 +275,8 @@ WHERE  NOT EXISTS (
 
 
 -- CONSULTA 16
+-- Listar as evoluções do Charmander com 1 e 2 etapas,
+-- juntando os dois resultados com UNION
 -- PERGUNTA 1: com 1 evolução, o Charmander vira o quê?
 SELECT o.nome AS especie_origem,
        d.nome AS especie_final,
@@ -294,17 +303,73 @@ ORDER BY etapas;
 
 
 -- CONSULTA 17
+-- Listar o(s) treinador(es) dono(s) do Pokémon de maior nível,
+-- com apelido, espécie e nível desse Pokémon
 SELECT	t.nome AS treinador,
 		p1.apelido,
-		e.nome AS especie	
+		e.nome AS especie,
 		p1.nivel AS nivel_pokemon
 		
 FROM treinador t
 JOIN pokemon p1 ON p1.id_treinador = t.id_treinador
 JOIN especie e ON e.id_especie = p1.id_especie
-WHERE p1.nivel = (SELECT MAX(p.nivel) FROM pokemon p)
+WHERE p1.nivel = (SELECT MAX(p.nivel) FROM pokemon p);
               
 
 
 -- CONSULTA 18
+-- Listar as regiões com pelo menos 20 capturas, mostrando a
+-- quantidade de capturas e a data da última (subconsulta no FROM)
 
+SELECT  r.nome AS regiao,
+        tot.qtd_capturas,
+        tot.ultima_captura
+FROM    (
+          SELECT   c.id_regiao AS regiao,
+                   COUNT(*)              AS qtd_capturas,     
+                   MAX(c.data_captura)  AS ultima_captura    
+          FROM     captura c                                 
+          GROUP BY c.id_regiao                               
+          HAVING   COUNT(*) >= 20     
+		 ) AS tot
+JOIN    regiao r ON r.id_regiao = tot.regiao;            
+
+
+
+-- CONSULTA 19
+-- Contar os Pokémons por região do treinador e raridade da espécie,
+-- com subtotais por região e total geral (ROLLUP + GROUPING)
+SELECT   r.nome      AS regiao,          
+         e.raridade, 
+         GROUPING(r.nome)     AS resumo_regiao,      
+		     GROUPING(e.raridade) AS resumo_raridade,  
+         COUNT(p.id_pokemon) AS quantidade
+		 
+FROM     pokemon p
+JOIN     treinador t ON t.id_treinador = p.id_treinador   
+JOIN     regiao r    ON r.id_regiao    = t.id_regiao   
+JOIN     especie e   ON e.id_especie   = p.id_especie   
+GROUP BY ROLLUP (r.nome, e.raridade)
+ORDER BY r.nome, e.raridade;
+
+
+
+-- CONSULTA 20
+-- Listar os treinadores com quantidade de Pokémons acima da
+-- média de Pokémons por treinador (contando quem tem 0)
+SELECT    t.id_treinador AS identificador,
+          t.nome,
+          COUNT(p.id_pokemon) AS quantidade
+		  
+FROM      treinador t
+LEFT JOIN pokemon p ON p.id_treinador = t.id_treinador        
+GROUP BY  t.id_treinador, t.nome                               
+HAVING    COUNT(p.id_pokemon) > (
+			  SELECT AVG(x.qtd)                        
+              FROM (
+                     SELECT COUNT(p2.id_pokemon) AS qtd    
+                     FROM   treinador t2
+                     LEFT JOIN pokemon p2 ON p2.id_treinador = t2.id_treinador
+                     GROUP BY t2.id_treinador
+                   ) AS x
+          );
